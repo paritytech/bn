@@ -16,7 +16,7 @@ default = ["rustc-serialize"]
 name = "api"
 
 [dependencies]
-rand = "0.4"
+rand = "0.5"
 rustc-serialize = { version = "0.3", optional = true }
 byteorder = "1.0"
 crunchy = "0.2.1"

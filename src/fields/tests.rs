@@ -114,8 +114,13 @@ pub fn field_trials<F: FieldElement>() {
     assert_eq!(-F::one() + F::one(), F::zero());
     assert_eq!(F::zero() - F::zero(), F::zero());
 
-    let seed: [usize; 4] = [103245, 191922, 1293, 192103];
-    let mut rng = StdRng::from_seed(&seed);
+    let seed = [
+        0, 0, 0, 0, 0, 0, 64, 13, // 103245
+        0, 0, 0, 0, 0, 0, 176, 2, // 191922
+        0, 0, 0, 0, 0, 0, 0, 13, // 1293
+        0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
+    ];
+    let mut rng = StdRng::from_seed(seed);
 
     rand_element_squaring::<F, StdRng>(&mut rng);
     rand_element_addition_and_negation::<F, StdRng>(&mut rng);
