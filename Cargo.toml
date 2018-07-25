@@ -16,9 +16,9 @@ default = ["rustc-serialize"]
 name = "api"
 
 [dependencies]
-rand = "0.5"
+rand = { version = "0.5", features = ["i128_support"] }
 rustc-serialize = { version = "0.3", optional = true }
-byteorder = "1.0"
+byteorder = { version = "1.0", features = ["i128"] }
 crunchy = "0.2.1"
 
 [dev-dependencies.bincode]

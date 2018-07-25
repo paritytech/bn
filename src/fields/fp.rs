@@ -16,7 +16,7 @@ macro_rules! field_impl {
         impl From<$name> for U256 {
             #[inline]
             fn from(mut a: $name) -> Self {
-                a.0.mul(&U256::one(), &U256($modulus), $inv);
+                a.0.mul(&U256::one(), &U256::from($modulus), $inv);
 
                 a.0
             }
@@ -63,8 +63,8 @@ macro_rules! field_impl {
 
             /// Converts a U256 to an Fp so long as it's below the modulus.
             pub fn new(mut a: U256) -> Option<Self> {
-                if a < U256($modulus) {
-                    a.mul(&U256($rsquared), &U256($modulus), $inv);
+                if a < U256::from($modulus) {
+                    a.mul(&U256::from($rsquared), &U256::from($modulus), $inv);
 
                     Some($name(a))
                 } else {
@@ -75,7 +75,7 @@ macro_rules! field_impl {
             /// Converts a U256 to an Fr regardless of modulus.
             pub fn new_mul_factor(mut a: U256) -> Option<Self> {
                 if true {
-                    a.mul(&U256($rsquared), &U256($modulus), $inv);
+                    a.mul(&U256::from($rsquared), &U256::from($modulus), $inv);
                     Some($name(a))
                 } else {
                     None
@@ -83,19 +83,19 @@ macro_rules! field_impl {
             }
 
             pub fn interpret(buf: &[u8; 64]) -> Self {
-                $name::new(U512::interpret(buf).divrem(&U256($modulus)).1).unwrap()
+                $name::new(U512::interpret(buf).divrem(&U256::from($modulus)).1).unwrap()
             }
 
             /// Returns the modulus
             #[inline]
             #[allow(dead_code)]
             pub fn modulus() -> U256 {
-                U256($modulus)
+                U256::from($modulus)
             }
 
             #[inline]
             #[allow(dead_code)]
-            pub fn inv(&self) -> u64 {
+            pub fn inv(&self) -> u128 {
                 $inv
             }
 
@@ -107,16 +107,16 @@ macro_rules! field_impl {
         impl FieldElement for $name {
             #[inline]
             fn zero() -> Self {
-                $name(U256([0, 0, 0, 0]))
+                $name(U256::from([0, 0, 0, 0]))
             }
 
             #[inline]
             fn one() -> Self {
-                $name(U256($one))
+                $name(U256::from($one))
             }
 
             fn random<R: Rng>(rng: &mut R) -> Self {
-                $name(U256::random(rng, &U256($modulus)))
+                $name(U256::random(rng, &U256::from($modulus)))
             }
 
             #[inline]
@@ -128,8 +128,8 @@ macro_rules! field_impl {
                 if self.is_zero() {
                     None
                 } else {
-                    self.0.invert(&U256($modulus));
-                    self.0.mul(&U256($rcubed), &U256($modulus), $inv);
+                    self.0.invert(&U256::from($modulus));
+                    self.0.mul(&U256::from($rcubed), &U256::from($modulus), $inv);
 
                     Some(self)
                 }
@@ -141,7 +141,7 @@ macro_rules! field_impl {
 
             #[inline]
             fn add(mut self, other: $name) -> $name {
-                self.0.add(&other.0, &U256($modulus));
+                self.0.add(&other.0, &U256::from($modulus));
 
                 self
             }
@@ -152,7 +152,7 @@ macro_rules! field_impl {
 
             #[inline]
             fn sub(mut self, other: $name) -> $name {
-                self.0.sub(&other.0, &U256($modulus));
+                self.0.sub(&other.0, &U256::from($modulus));
 
                 self
             }
@@ -163,7 +163,7 @@ macro_rules! field_impl {
 
             #[inline]
             fn mul(mut self, other: $name) -> $name {
-                self.0.mul(&other.0, &U256($modulus), $inv);
+                self.0.mul(&other.0, &U256::from($modulus), $inv);
 
                 self
             }
@@ -174,7 +174,7 @@ macro_rules! field_impl {
 
             #[inline]
             fn neg(mut self) -> $name {
-                self.0.neg(&U256($modulus));
+                self.0.neg(&U256::from($modulus));
 
                 self
             }
@@ -208,7 +208,7 @@ field_impl!(
         0x666ea36f7879462e,
         0xe0a77c19a07df2f
     ],
-    0xc2e1f593efffffff
+    0x6586864b4c6911b3c2e1f593efffffff
 );
 
 field_impl!(
@@ -237,12 +237,12 @@ field_impl!(
         0x666ea36f7879462c,
         0xe0a77c19a07df2f
     ],
-    0x87d20782e4866389
+    0x9ede7d651eca6ac987d20782e4866389
 );
 
 #[inline]
 pub fn const_fq(i: [u64; 4]) -> Fq {
-    Fq(U256(i))
+    Fq(U256::from(i))
 }
 
 #[test]

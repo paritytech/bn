@@ -120,7 +120,7 @@ impl Fq12 {
     }
 
     pub fn exp_by_neg_z(&self) -> Fq12 {
-        self.cyclotomic_pow(U256([4965661367192848881, 0, 0, 0]))
+        self.cyclotomic_pow(U256::from([4965661367192848881, 0, 0, 0]))
             .unitary_inverse()
     }
 

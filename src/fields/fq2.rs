@@ -50,7 +50,7 @@ impl Encodable for Fq2 {
         let c0: U256 = self.c0.into();
         let c1: U256 = self.c1.into();
 
-        U512::from(&c1, &c0, &Fq::modulus()).encode(s)
+        U512::new(&c1, &c0, &Fq::modulus()).encode(s)
     }
 }
 

@@ -9,43 +9,63 @@ use byteorder::{BigEndian, ByteOrder};
 /// arithmetic.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub struct U256(pub [u64; 4]);
+pub struct U256(pub [u128; 2]);
+
+impl From<[u64; 4]> for U256 {
+    fn from(d: [u64; 4]) -> Self {
+        let mut a = [0u128; 2];
+        a[0] = (d[1] as u128) << 64 | d[0] as u128;
+        a[1] = (d[3] as u128) << 64 | d[2] as u128;
+        U256(a)
+    }
+}
 
 /// 512-bit, stack allocated biginteger for use in extension
 /// field serialization and scalar interpretation.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub struct U512(pub [u64; 8]);
+pub struct U512(pub [u128; 4]);
+
+impl From<[u64; 8]> for U512 {
+    fn from(d: [u64; 8]) -> Self {
+        let mut a = [0u128; 4];
+        a[0] = (d[1] as u128) << 64 | d[0] as u128;
+        a[1] = (d[3] as u128) << 64 | d[2] as u128;
+        a[2] = (d[5] as u128) << 64 | d[4] as u128;
+        a[3] = (d[7] as u128) << 64 | d[6] as u128;
+        U512(a)
+    }
+}
 
 impl U512 {
     /// Multiplies c1 by modulo, adds c0.
-    pub fn from(c1: &U256, c0: &U256, modulo: &U256) -> U512 {
-        let mut res = [0; 8];
+    pub fn new(c1: &U256, c0: &U256, modulo: &U256) -> U512 {
+        let mut res = [0; 4];
 
-        debug_assert_eq!(c1.0.len(), 4);
+        debug_assert_eq!(c1.0.len(), 2);
         unroll! {
-            for i in 0..4 {
+            for i in 0..2 {
                 mac_digit(i, &mut res, &modulo.0, c1.0[i]);
             }
         }
 
         let mut carry = 0;
 
-        debug_assert_eq!(res.len(), 8);
+        debug_assert_eq!(res.len(), 4);
         unroll! {
-            for i in 0..4 {
+            for i in 0..2 {
                 res[i] = adc(res[i], c0.0[i], &mut carry);
             }
         }
 
         unroll! {
-            for i in 0..4 {
-                let (a1, a0) = split_u64(res[i + 4]);
-                let (c, r0) = split_u64(a0 + carry);
-                let (c, r1) = split_u64(a1 + c);
+            for i in 0..2 {
+                let (a1, a0) = split_u128(res[i + 2]);
+                let (c, r0) = split_u128(a0 + carry);
+                let (c, r1) = split_u128(a1 + c);
                 carry = c;
 
-                res[i + 4] = combine_u64(r1, r0);
+                res[i + 2] = combine_u128(r1, r0);
             }
         }
 
@@ -63,8 +83,8 @@ impl U512 {
         if n >= 512 {
             None
         } else {
-            let part = n / 64;
-            let bit = n - (64 * part);
+            let part = n / 128;
+            let bit = n - (128 * part);
 
             Some(self.0[part] & (1 << bit) > 0)
         }
@@ -97,9 +117,9 @@ impl U512 {
     }
 
     pub fn interpret(buf: &[u8; 64]) -> U512 {
-        let mut n = [0; 8];
-        for (l, i) in (0..8).rev().zip((0..8).map(|i| i * 8)) {
-            n[l] = BigEndian::read_u64(&buf[i..]);
+        let mut n = [0; 4];
+        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 16)) {
+            n[l] = BigEndian::read_u128(&buf[i..]);
         }
 
         U512(n)
@@ -109,13 +129,13 @@ impl U512 {
 #[cfg(feature = "rustc-serialize")]
 impl Encodable for U512 {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        let mut buf = [0; (8 * 8)];
+        let mut buf = [0; (4 * 16)];
 
-        for (l, i) in (0..8).rev().zip((0..8).map(|i| i * 8)) {
-            BigEndian::write_u64(&mut buf[i..], self.0[l]);
+        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 16)) {
+            BigEndian::write_u128(&mut buf[i..], self.0[l]);
         }
 
-        for i in 0..(8 * 8) {
+        for i in 0..(4 * 16) {
             try!(s.emit_u8(buf[i]));
         }
 
@@ -126,9 +146,9 @@ impl Encodable for U512 {
 #[cfg(feature = "rustc-serialize")]
 impl Decodable for U512 {
     fn decode<S: Decoder>(s: &mut S) -> Result<U512, S::Error> {
-        let mut buf = [0; (8 * 8)];
+        let mut buf = [0; (4 * 16)];
 
-        for i in 0..(8 * 8) {
+        for i in 0..(4 * 16) {
             buf[i] = try!(s.read_u8());
         }
 
@@ -139,13 +159,13 @@ impl Decodable for U512 {
 #[cfg(feature = "rustc-serialize")]
 impl Encodable for U256 {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        let mut buf = [0; (4 * 8)];
+        let mut buf = [0; (2 * 16)];
 
-        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 8)) {
-            BigEndian::write_u64(&mut buf[i..], self.0[l]);
+        for (l, i) in (0..2).rev().zip((0..2).map(|i| i * 16)) {
+            BigEndian::write_u128(&mut buf[i..], self.0[l]);
         }
 
-        for i in 0..(4 * 8) {
+        for i in 0..(2 * 16) {
             try!(s.emit_u8(buf[i]));
         }
 
@@ -156,9 +176,9 @@ impl Encodable for U256 {
 #[cfg(feature = "rustc-serialize")]
 impl Decodable for U256 {
     fn decode<S: Decoder>(s: &mut S) -> Result<U256, S::Error> {
-        let mut buf = [0; (4 * 8)];
+        let mut buf = [0; (2 * 16)];
 
-        for i in 0..(4 * 8) {
+        for i in 0..(2 * 16) {
             buf[i] = try!(s.read_u8());
         }
 
@@ -204,9 +224,9 @@ impl U256 {
             });
         }
 
-        let mut n = [0; 4];
-        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 8)) {
-            n[l] = BigEndian::read_u64(&s[i..]);
+        let mut n = [0; 2];
+        for (l, i) in (0..2).rev().zip((0..2).map(|i| i * 16)) {
+            n[l] = BigEndian::read_u128(&s[i..]);
         }
 
         Ok(U256(n))
@@ -220,8 +240,8 @@ impl U256 {
             });
         }
 
-        for (l, i) in (0..4).rev().zip((0..4).map(|i| i * 8)) {
-            BigEndian::write_u64(&mut s[i..], self.0[l]);
+        for (l, i) in (0..2).rev().zip((0..2).map(|i| i * 16)) {
+            BigEndian::write_u128(&mut s[i..], self.0[l]);
         }
 
         Ok(())
@@ -229,12 +249,12 @@ impl U256 {
 
     #[inline]
     pub fn zero() -> U256 {
-        U256([0, 0, 0, 0])
+        U256([0, 0])
     }
 
     #[inline]
     pub fn one() -> U256 {
-        U256([1, 0, 0, 0])
+        U256([1, 0])
     }
 
     /// Produce a random number (mod `modulo`)
@@ -243,15 +263,15 @@ impl U256 {
     }
 
     pub fn is_zero(&self) -> bool {
-        self.0[0] == 0 && self.0[1] == 0 && self.0[2] == 0 && self.0[3] == 0
+        self.0[0] == 0 && self.0[1] == 0
     }
 
     pub fn set_bit(&mut self, n: usize, to: bool) -> bool {
         if n >= 256 {
             false
         } else {
-            let part = n / 64;
-            let bit = n - (64 * part);
+            let part = n / 128;
+            let bit = n - (128 * part);
 
             if to {
                 self.0[part] |= 1 << bit;
@@ -267,8 +287,8 @@ impl U256 {
         if n >= 256 {
             None
         } else {
-            let part = n / 64;
-            let bit = n - (64 * part);
+            let part = n / 128;
+            let bit = n - (128 * part);
 
             Some(self.0[part] & (1 << bit) > 0)
         }
@@ -294,7 +314,7 @@ impl U256 {
 
     /// Multiply `self` by `other` (mod `modulo`) via the Montgomery
     /// multiplication method.
-    pub fn mul(&mut self, other: &U256, modulo: &U256, inv: u64) {
+    pub fn mul(&mut self, other: &U256, modulo: &U256, inv: u128) {
         mul_reduce(&mut self.0, &other.0, &modulo.0, inv);
 
         if *self >= *modulo {
@@ -394,54 +414,46 @@ impl<'a> Iterator for BitIterator<'a> {
 
 /// Divide by two
 #[inline]
-fn div2(a: &mut [u64; 4]) {
-    let mut t = a[3] << 63;
-    a[3] = a[3] >> 1;
-    let b = a[2] << 63;
-    a[2] >>= 1;
-    a[2] |= t;
-    t = a[1] << 63;
+fn div2(a: &mut [u128; 2]) {
+    let tmp = a[1] << 127;
     a[1] >>= 1;
-    a[1] |= b;
     a[0] >>= 1;
-    a[0] |= t;
+    a[0] |= tmp;
 }
 
 /// Multiply by two
 #[inline]
-fn mul2(a: &mut [u64; 4]) {
-    let mut last = 0;
-    for i in a {
-        let tmp = *i >> 63;
-        *i <<= 1;
-        *i |= last;
-        last = tmp;
-    }
+#[inline]
+fn mul2(a: &mut [u128; 2]) {
+    let tmp = a[0] >> 127;
+    a[0] <<= 1;
+    a[1] <<= 1;
+    a[1] |= tmp;
 }
 
 #[inline(always)]
-fn split_u64(i: u64) -> (u64, u64) {
-    (i >> 32, i & 0xFFFFFFFF)
+fn split_u128(i: u128) -> (u128, u128) {
+    (i >> 64, i & 0xFFFFFFFFFFFFFFFF)
 }
 
 #[inline(always)]
-fn combine_u64(hi: u64, lo: u64) -> u64 {
-    (hi << 32) | lo
+fn combine_u128(hi: u128, lo: u128) -> u128 {
+    (hi << 64) | lo
 }
 
 #[inline]
-fn adc(a: u64, b: u64, carry: &mut u64) -> u64 {
-    let (a1, a0) = split_u64(a);
-    let (b1, b0) = split_u64(b);
-    let (c, r0) = split_u64(a0 + b0 + *carry);
-    let (c, r1) = split_u64(a1 + b1 + c);
+fn adc(a: u128, b: u128, carry: &mut u128) -> u128 {
+    let (a1, a0) = split_u128(a);
+    let (b1, b0) = split_u128(b);
+    let (c, r0) = split_u128(a0 + b0 + *carry);
+    let (c, r1) = split_u128(a1 + b1 + c);
     *carry = c;
 
-    combine_u64(r1, r0)
+    combine_u128(r1, r0)
 }
 
 #[inline]
-fn add_nocarry(a: &mut [u64; 4], b: &[u64; 4]) {
+fn add_nocarry(a: &mut [u128; 2], b: &[u128; 2]) {
     let mut carry = 0;
 
     for (a, b) in a.into_iter().zip(b.iter()) {
@@ -452,17 +464,17 @@ fn add_nocarry(a: &mut [u64; 4], b: &[u64; 4]) {
 }
 
 #[inline]
-fn sub_noborrow(a: &mut [u64; 4], b: &[u64; 4]) {
+fn sub_noborrow(a: &mut [u128; 2], b: &[u128; 2]) {
     #[inline]
-    fn sbb(a: u64, b: u64, borrow: &mut u64) -> u64 {
-        let (a1, a0) = split_u64(a);
-        let (b1, b0) = split_u64(b);
-        let (b, r0) = split_u64((1 << 32) + a0 - b0 - *borrow);
-        let (b, r1) = split_u64((1 << 32) + a1 - b1 - ((b == 0) as u64));
+    fn sbb(a: u128, b: u128, borrow: &mut u128) -> u128 {
+        let (a1, a0) = split_u128(a);
+        let (b1, b0) = split_u128(b);
+        let (b, r0) = split_u128((1 << 64) + a0 - b0 - *borrow);
+        let (b, r1) = split_u128((1 << 64) + a1 - b1 - ((b == 0) as u128));
 
-        *borrow = (b == 0) as u64;
+        *borrow = (b == 0) as u128;
 
-        combine_u64(r1, r0)
+        combine_u128(r1, r0)
     }
 
     let mut borrow = 0;
@@ -476,23 +488,23 @@ fn sub_noborrow(a: &mut [u64; 4], b: &[u64; 4]) {
 
 // TODO: Make `from_index` a const param
 #[inline(always)]
-fn mac_digit(from_index: usize, acc: &mut [u64; 8], b: &[u64; 4], c: u64) {
+fn mac_digit(from_index: usize, acc: &mut [u128; 4], b: &[u128; 2], c: u128) {
     #[inline]
-    fn mac_with_carry(a: u64, b: u64, c: u64, carry: &mut u64) -> u64 {
-        let (b_hi, b_lo) = split_u64(b);
-        let (c_hi, c_lo) = split_u64(c);
+    fn mac_with_carry(a: u128, b: u128, c: u128, carry: &mut u128) -> u128 {
+        let (b_hi, b_lo) = split_u128(b);
+        let (c_hi, c_lo) = split_u128(c);
 
-        let (a_hi, a_lo) = split_u64(a);
-        let (carry_hi, carry_lo) = split_u64(*carry);
-        let (x_hi, x_lo) = split_u64(b_lo * c_lo + a_lo + carry_lo);
-        let (y_hi, y_lo) = split_u64(b_lo * c_hi);
-        let (z_hi, z_lo) = split_u64(b_hi * c_lo);
+        let (a_hi, a_lo) = split_u128(a);
+        let (carry_hi, carry_lo) = split_u128(*carry);
+        let (x_hi, x_lo) = split_u128(b_lo * c_lo + a_lo + carry_lo);
+        let (y_hi, y_lo) = split_u128(b_lo * c_hi);
+        let (z_hi, z_lo) = split_u128(b_hi * c_lo);
         // Brackets to allow better ILP
-        let (r_hi, r_lo) = split_u64((x_hi + y_lo) + (z_lo + a_hi) + carry_hi);
+        let (r_hi, r_lo) = split_u128((x_hi + y_lo) + (z_lo + a_hi) + carry_hi);
 
         *carry = (b_hi * c_hi) + r_hi + y_hi + z_hi;
 
-        combine_u64(r_lo, x_lo)
+        combine_u128(r_lo, x_lo)
     }
 
     if c == 0 {
@@ -501,25 +513,25 @@ fn mac_digit(from_index: usize, acc: &mut [u64; 8], b: &[u64; 4], c: u64) {
 
     let mut carry = 0;
 
-    debug_assert_eq!(acc.len(), 8);
+    debug_assert_eq!(acc.len(), 4);
     unroll! {
-        for i in 0..4 {
+        for i in 0..2 {
             let a_index = i + from_index;
             acc[a_index] = mac_with_carry(acc[a_index], b[i], c, &mut carry);
         }
     }
     unroll! {
-        for i in 0..4 {
-            let a_index = i + from_index + 4;
-            if a_index < 8 {
-                let (a_hi, a_lo) = split_u64(acc[a_index]);
-                let (carry_hi, carry_lo) = split_u64(carry);
-                let (x_hi, x_lo) = split_u64(a_lo + carry_lo);
-                let (r_hi, r_lo) = split_u64(x_hi + a_hi + carry_hi);
+        for i in 0..2 {
+            let a_index = i + from_index + 2;
+            if a_index < 4 {
+                let (a_hi, a_lo) = split_u128(acc[a_index]);
+                let (carry_hi, carry_lo) = split_u128(carry);
+                let (x_hi, x_lo) = split_u128(a_lo + carry_lo);
+                let (r_hi, r_lo) = split_u128(x_hi + a_hi + carry_hi);
 
                 carry = r_hi;
 
-                acc[a_index] = combine_u64(r_lo, x_lo);
+                acc[a_index] = combine_u128(r_lo, x_lo);
             }
         }
     }
@@ -528,32 +540,32 @@ fn mac_digit(from_index: usize, acc: &mut [u64; 8], b: &[u64; 4], c: u64) {
 }
 
 #[inline]
-fn mul_reduce(this: &mut [u64; 4], by: &[u64; 4], modulus: &[u64; 4], inv: u64) {
+fn mul_reduce(this: &mut [u128; 2], by: &[u128; 2], modulus: &[u128; 2], inv: u128) {
     // The Montgomery reduction here is based on Algorithm 14.32 in
     // Handbook of Applied Cryptography
     // <http://cacr.uwaterloo.ca/hac/about/chap14.pdf>.
 
-    let mut res = [0; 2 * 4];
+    let mut res = [0; 2 * 2];
     unroll! {
-        for i in 0..4 {
+        for i in 0..2 {
             mac_digit(i, &mut res, by, this[i]);
         }
     }
 
     unroll! {
-        for i in 0..4 {
+        for i in 0..2 {
             let k = inv.wrapping_mul(res[i]);
             mac_digit(i, &mut res, modulus, k);
         }
     }
 
-    this.copy_from_slice(&res[4..]);
+    this.copy_from_slice(&res[2..]);
 }
 
 #[test]
 fn setting_bits() {
     let rng = &mut ::rand::thread_rng();
-    let modulo = U256([0xffffffffffffffff; 4]);
+    let modulo = U256::from([0xffffffffffffffff; 4]);
 
     let a = U256::random(rng, &modulo);
     let mut e = U256::zero();
@@ -595,7 +607,7 @@ fn to_big_endian() {
 fn testing_divrem() {
     let rng = &mut ::rand::thread_rng();
 
-    let modulo = U256([
+    let modulo = U256::from([
         0x3c208c16d87cfd47,
         0x97816a916871ca8d,
         0xb85045b68181585d,
@@ -606,7 +618,7 @@ fn testing_divrem() {
         let c0 = U256::random(rng, &modulo);
         let c1 = U256::random(rng, &modulo);
 
-        let c1q_plus_c0 = U512::from(&c1, &c0, &modulo);
+        let c1q_plus_c0 = U512::new(&c1, &c0, &modulo);
 
         let (new_c1, new_c0) = c1q_plus_c0.divrem(&modulo);
 
@@ -616,7 +628,7 @@ fn testing_divrem() {
 
     {
         // Modulus should become 1*q + 0
-        let a = U512([
+        let a = U512::from([
             0x3c208c16d87cfd47,
             0x97816a916871ca8d,
             0xb85045b68181585d,
@@ -634,7 +646,7 @@ fn testing_divrem() {
 
     {
         // Modulus squared minus 1 should be (q-1) q + q-1
-        let a = U512([
+        let a = U512::from([
             0x3b5458a2275d69b0,
             0xa602072d09eac101,
             0x4a50189c6d96cadc,
@@ -648,7 +660,7 @@ fn testing_divrem() {
         let (c1, c0) = a.divrem(&modulo);
         assert_eq!(
             c1.unwrap(),
-            U256([
+            U256::from([
                 0x3c208c16d87cfd46,
                 0x97816a916871ca8d,
                 0xb85045b68181585d,
@@ -657,7 +669,7 @@ fn testing_divrem() {
         );
         assert_eq!(
             c0,
-            U256([
+            U256::from([
                 0x3c208c16d87cfd46,
                 0x97816a916871ca8d,
                 0xb85045b68181585d,
@@ -668,7 +680,7 @@ fn testing_divrem() {
 
     {
         // Modulus squared minus 2 should be (q-1) q + q-2
-        let a = U512([
+        let a = U512::from([
             0x3b5458a2275d69af,
             0xa602072d09eac101,
             0x4a50189c6d96cadc,
@@ -683,7 +695,7 @@ fn testing_divrem() {
 
         assert_eq!(
             c1.unwrap(),
-            U256([
+            U256::from([
                 0x3c208c16d87cfd46,
                 0x97816a916871ca8d,
                 0xb85045b68181585d,
@@ -692,7 +704,7 @@ fn testing_divrem() {
         );
         assert_eq!(
             c0,
-            U256([
+            U256::from([
                 0x3c208c16d87cfd45,
                 0x97816a916871ca8d,
                 0xb85045b68181585d,
@@ -703,7 +715,7 @@ fn testing_divrem() {
 
     {
         // Ridiculously large number should fail
-        let a = U512([
+        let a = U512::from([
             0xffffffffffffffff,
             0xffffffffffffffff,
             0xffffffffffffffff,
@@ -718,7 +730,7 @@ fn testing_divrem() {
         assert!(c1.is_none());
         assert_eq!(
             c0,
-            U256([
+            U256::from([
                 0xf32cfc5b538afa88,
                 0xb5e71911d44501fb,
                 0x47ab1eff0a417ff6,
@@ -729,7 +741,7 @@ fn testing_divrem() {
 
     {
         // Modulus squared should fail
-        let a = U512([
+        let a = U512::from([
             0x3b5458a2275d69b1,
             0xa602072d09eac101,
             0x4a50189c6d96cadc,
@@ -747,7 +759,7 @@ fn testing_divrem() {
 
     {
         // Modulus squared plus one should fail
-        let a = U512([
+        let a = U512::from([
             0x3b5458a2275d69b2,
             0xa602072d09eac101,
             0x4a50189c6d96cadc,
@@ -764,7 +776,7 @@ fn testing_divrem() {
     }
 
     {
-        let modulo = U256([
+        let modulo = U256::from([
             0x43e1f593f0000001,
             0x2833e84879b97091,
             0xb85045b68181585d,
@@ -772,7 +784,7 @@ fn testing_divrem() {
         ]);
 
         // Fr modulus masked off is valid
-        let a = U512([
+        let a = U512::from([
             0xffffffffffffffff,
             0xffffffffffffffff,
             0xffffffffffffffff,

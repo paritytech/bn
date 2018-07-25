@@ -574,7 +574,7 @@ fn two_inv() -> Fq {
 
 #[inline]
 fn ate_loop_count() -> U256 {
-    U256([
+    U256::from([
         0x9d797039be763ba8,
         0x0000000000000001,
         0x0000000000000000,
