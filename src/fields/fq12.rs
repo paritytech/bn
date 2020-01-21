@@ -1,7 +1,6 @@
-use fields::{const_fq, FieldElement, Fq, Fq2, Fq6};
-use std::ops::{Add, Mul, Neg, Sub};
+use core::ops::{Add, Mul, Neg, Sub};
 use rand::Rng;
-
+use fields::{const_fq, FieldElement, Fq, Fq2, Fq6};
 use arith::U256;
 
 fn frobenius_coeffs_c1(power: usize) -> Fq2 {

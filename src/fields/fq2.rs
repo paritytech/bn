@@ -1,7 +1,6 @@
-use fields::{const_fq, FieldElement, Fq};
-use std::ops::{Add, Mul, Neg, Sub};
+use core::ops::{Add, Mul, Neg, Sub};
 use rand::Rng;
-
+use fields::{const_fq, FieldElement, Fq};
 use arith::{U256, U512};
 
 #[cfg(feature = "rustc-serialize")]

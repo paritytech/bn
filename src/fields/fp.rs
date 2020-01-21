@@ -1,11 +1,11 @@
+use alloc::vec::Vec;
+use core::ops::{Add, Mul, Neg, Sub};
 use rand::Rng;
-use std::ops::{Add, Mul, Neg, Sub};
-use super::FieldElement;
+use fields::FieldElement;
+use arith::{U256, U512};
 
 #[cfg(feature = "rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-
-use arith::{U256, U512};
 
 macro_rules! field_impl {
     ($name:ident, $modulus:expr, $rsquared:expr, $rcubed:expr, $one:expr, $inv:expr) => {

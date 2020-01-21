@@ -16,12 +16,15 @@ default = ["rustc-serialize"]
 name = "api"
 
 [dependencies]
-rand = { version = "0.5", features = ["i128_support"] }
+rand = { version = "0.5", features = ["i128_support"], default-features = false }
 rustc-serialize = { version = "0.3", optional = true }
-byteorder = { version = "1.0", features = ["i128"] }
+byteorder = { version = "1.0", features = ["i128"], default-features = false }
 crunchy = "0.2.1"
-lazy_static = "*"
-rustc-hex = "2"
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+rustc-hex = { version = "2", default-features = false }
+
+[dev-dependencies]
+rand = { version = "0.5", features = ["i128_support"] }
 
 [dev-dependencies.bincode]
 version = "0.6"

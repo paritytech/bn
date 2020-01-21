@@ -1,3 +1,7 @@
+#![no_std]
+
+#[macro_use]
+extern crate alloc;
 extern crate byteorder;
 #[macro_use]
 extern crate crunchy;
@@ -13,7 +17,8 @@ mod groups;
 use fields::FieldElement;
 use groups::{GroupElement, G1Params, G2Params, GroupParams};
 
-use std::ops::{Add, Mul, Neg, Sub};
+use alloc::vec::Vec;
+use core::ops::{Add, Mul, Neg, Sub};
 use rand::Rng;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -115,6 +120,7 @@ pub enum CurveError {
     InvalidEncoding,
     NotMember,
     Field(FieldError),
+    ToAffineConversion,
 }
 
 impl From<FieldError> for CurveError {
@@ -599,8 +605,11 @@ impl Gt {
     pub fn pow(&self, exp: Fr) -> Self {
         Gt(self.0.pow(exp.0))
     }
-    pub fn inverse(&self) -> Self {
-        Gt(self.0.inverse().unwrap())
+    pub fn inverse(&self) -> Option<Self> {
+        self.0.inverse().map(Gt)
+    }
+    pub fn final_exponentiation(&self) -> Option<Self> {
+        self.0.final_exponentiation().map(Gt)
     }
 }
 
@@ -617,13 +626,23 @@ pub fn pairing(p: G1, q: G2) -> Gt {
 }
 
 pub fn pairing_batch(pairs: &[(G1, G2)]) -> Gt {
-    let mut ps : Vec<groups::G1> = vec![];
-    let mut qs : Vec<groups::G2> = vec![];
+    let mut ps : Vec<groups::G1> = Vec::new();
+    let mut qs : Vec<groups::G2> = Vec::new();
     for (p, q) in pairs {
         ps.push(p.0);
         qs.push(q.0);
     }
     Gt(groups::pairing_batch(&ps, &qs))
+}
+
+pub fn miller_loop_batch(pairs: &[(G2, G1)]) -> Result<Gt, CurveError> {
+    let mut ps : Vec<groups::G2Precomp> = Vec::new();
+    let mut qs : Vec<groups::AffineG<groups::G1Params>> = Vec::new();
+    for (p, q) in pairs {
+        ps.push(p.0.to_affine().ok_or(CurveError::ToAffineConversion)?.precompute());
+        qs.push(q.0.to_affine().ok_or(CurveError::ToAffineConversion)?);
+    }
+    Ok(Gt(groups::miller_loop_batch(&ps, &qs)))
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -666,7 +685,7 @@ impl From<AffineG2> for G2 {
 #[cfg(test)]
 mod tests {
     extern crate rustc_hex as hex;
-
+    use alloc::vec::Vec;
     use super::{G1, Fq, G2, Fq2};
 
     fn hex(s: &'static str) -> Vec<u8> {

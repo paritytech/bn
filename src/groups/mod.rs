@@ -1,8 +1,8 @@
-use std::ops::{Add, Mul, Neg, Sub};
 use fields::{const_fq, FieldElement, Fq, Fq12, Fq2, Fr, fq2_nonresidue};
 use arith::U256;
-use std::fmt;
+use core::{fmt, ops::{Add, Mul, Neg, Sub}};
 use rand::Rng;
+use alloc::vec::Vec;
 
 #[cfg(feature = "rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -661,7 +661,7 @@ impl G2Precomp {
     }
 }
 
-fn miller_loop_batch(g2_precomputes: &Vec<G2Precomp>, g1_vec: &Vec<AffineG<G1Params>>) -> Fq12 {
+pub fn miller_loop_batch(g2_precomputes: &Vec<G2Precomp>, g1_vec: &Vec<AffineG<G1Params>>) -> Fq12 {
     let mut f = Fq12::one();
 
     let mut idx = 0;
@@ -957,8 +957,8 @@ pub fn pairing(p: &G1, q: &G2) -> Fq12 {
 }
 
 pub fn pairing_batch(ps: &[G1], qs: &[G2]) -> Fq12 {
-    let mut p_affines: Vec<AffineG<G1Params>> = vec![];
-    let mut q_precomputes: Vec<G2Precomp> = vec![];
+    let mut p_affines: Vec<AffineG<G1Params>> = Vec::new();
+    let mut q_precomputes: Vec<G2Precomp> = Vec::new();
     for (p, q) in ps.into_iter().zip(qs.into_iter()) {
 
         let p_affine = p.to_affine();
@@ -1088,8 +1088,8 @@ fn predefined_pair() {
 
 #[test]
 fn test_batch_bilinearity_empty() {
-    let p_vec : Vec<G1> = vec![];
-    let q_vec : Vec<G2> = vec![];
+    let p_vec : Vec<G1> = Vec::new();
+    let q_vec : Vec<G2> = Vec::new();
     let r = pairing_batch(&p_vec, &q_vec);
     assert_eq!(r, Fq12::one());
 }
@@ -1125,10 +1125,10 @@ fn test_batch_bilinearity_fifty() {
     ];
     let mut rng = StdRng::from_seed(seed);
 
-    let mut p_vec : Vec<G1> = vec![];
-    let mut q_vec : Vec<G2> = vec![];
-    let mut sp_vec : Vec<G1> = vec![];
-    let mut sq_vec : Vec<G2> = vec![];
+    let mut p_vec : Vec<G1> = Vec::new();
+    let mut q_vec : Vec<G2> = Vec::new();
+    let mut sp_vec : Vec<G1> = Vec::new();
+    let mut sq_vec : Vec<G2> = Vec::new();
     
     for _ in 0..50 {
         let p = G1::random(&mut rng);
