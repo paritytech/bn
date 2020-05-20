@@ -980,239 +980,244 @@ pub fn pairing_batch(ps: &[G1], qs: &[G2]) -> Fq12 {
     miller_loop_batch(&q_precomputes, &p_affines).final_exponentiation().expect("miller loop cannot produce zero")
 }
 
-#[test]
-fn test_reduced_pairing() {
-    use fields::Fq6;
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    let g1 = G1::one()
-        * Fr::from_str(
+    #[test]
+    fn test_reduced_pairing() {
+        use fields::Fq6;
+
+        let g1 = G1::one()
+            * Fr::from_str(
             "18097487326282793650237947474982649264364522469319914492172746413872781676",
         ).unwrap();
-    let g2 = G2::one()
-        * Fr::from_str(
+        let g2 = G2::one()
+            * Fr::from_str(
             "20390255904278144451778773028944684152769293537511418234311120800877067946",
         ).unwrap();
 
-    let gt = pairing(&g1, &g2);
+        let gt = pairing(&g1, &g2);
 
-    let expected = Fq12::new(
-        Fq6::new(
-            Fq2::new(
-                Fq::from_str(
-                    "7520311483001723614143802378045727372643587653754534704390832890681688842501",
-                ).unwrap(),
-                Fq::from_str(
-                    "20265650864814324826731498061022229653175757397078253377158157137251452249882",
-                ).unwrap(),
+        let expected = Fq12::new(
+            Fq6::new(
+                Fq2::new(
+                    Fq::from_str(
+                        "7520311483001723614143802378045727372643587653754534704390832890681688842501",
+                    ).unwrap(),
+                    Fq::from_str(
+                        "20265650864814324826731498061022229653175757397078253377158157137251452249882",
+                    ).unwrap(),
+                ),
+                Fq2::new(
+                    Fq::from_str(
+                        "11942254371042183455193243679791334797733902728447312943687767053513298221130",
+                    ).unwrap(),
+                    Fq::from_str(
+                        "759657045325139626991751731924144629256296901790485373000297868065176843620",
+                    ).unwrap(),
+                ),
+                Fq2::new(
+                    Fq::from_str(
+                        "16045761475400271697821392803010234478356356448940805056528536884493606035236",
+                    ).unwrap(),
+                    Fq::from_str(
+                        "4715626119252431692316067698189337228571577552724976915822652894333558784086",
+                    ).unwrap(),
+                ),
             ),
-            Fq2::new(
-                Fq::from_str(
-                    "11942254371042183455193243679791334797733902728447312943687767053513298221130",
-                ).unwrap(),
-                Fq::from_str(
-                    "759657045325139626991751731924144629256296901790485373000297868065176843620",
-                ).unwrap(),
+            Fq6::new(
+                Fq2::new(
+                    Fq::from_str(
+                        "14901948363362882981706797068611719724999331551064314004234728272909570402962",
+                    ).unwrap(),
+                    Fq::from_str(
+                        "11093203747077241090565767003969726435272313921345853819385060670210834379103",
+                    ).unwrap(),
+                ),
+                Fq2::new(
+                    Fq::from_str(
+                        "17897835398184801202802503586172351707502775171934235751219763553166796820753",
+                    ).unwrap(),
+                    Fq::from_str(
+                        "1344517825169318161285758374052722008806261739116142912817807653057880346554",
+                    ).unwrap(),
+                ),
+                Fq2::new(
+                    Fq::from_str(
+                        "11123896897251094532909582772961906225000817992624500900708432321664085800838",
+                    ).unwrap(),
+                    Fq::from_str(
+                        "17453370448280081813275586256976217762629631160552329276585874071364454854650",
+                    ).unwrap(),
+                ),
             ),
-            Fq2::new(
-                Fq::from_str(
-                    "16045761475400271697821392803010234478356356448940805056528536884493606035236",
-                ).unwrap(),
-                Fq::from_str(
-                    "4715626119252431692316067698189337228571577552724976915822652894333558784086",
-                ).unwrap(),
-            ),
-        ),
-        Fq6::new(
-            Fq2::new(
-                Fq::from_str(
-                    "14901948363362882981706797068611719724999331551064314004234728272909570402962",
-                ).unwrap(),
-                Fq::from_str(
-                    "11093203747077241090565767003969726435272313921345853819385060670210834379103",
-                ).unwrap(),
-            ),
-            Fq2::new(
-                Fq::from_str(
-                    "17897835398184801202802503586172351707502775171934235751219763553166796820753",
-                ).unwrap(),
-                Fq::from_str(
-                    "1344517825169318161285758374052722008806261739116142912817807653057880346554",
-                ).unwrap(),
-            ),
-            Fq2::new(
-                Fq::from_str(
-                    "11123896897251094532909582772961906225000817992624500900708432321664085800838",
-                ).unwrap(),
-                Fq::from_str(
-                    "17453370448280081813275586256976217762629631160552329276585874071364454854650",
-                ).unwrap(),
-            ),
-        ),
-    );
+        );
 
-    assert_eq!(expected, gt);
-}
-
-#[test]
-fn predefined_pair() {
-    let g1 = AffineG1::new(
-        Fq::from_str("1").expect("Fq(1) should exist"),
-        Fq::from_str("2").expect("Fq(2) should exist"),
-    ).expect("Point (1,2) should exist in G1")
-        .to_jacobian();
-
-    let g2 = AffineG2::new(
-        Fq2::new(
-            Fq::from_str("10857046999023057135944570762232829481370756359578518086990519993285655852781")
-                .expect("a-coeff of g2 x generator is of the right order"),
-            Fq::from_str("11559732032986387107991004021392285783925812861821192530917403151452391805634")
-                .expect("b-coeff of g2 x generator is of the right order"),
-        ),
-        Fq2::new(
-            Fq::from_str("8495653923123431417604973247489272438418190587263600148770280649306958101930")
-                .expect("a-coeff of g2 y generator is of the right order"),
-            Fq::from_str("4082367875863433681332203403145435568316851327593401208105741076214120093531")
-                .expect("b-coeff of g2 y generator is of the right order"),
-        ),
-    ).expect("Point(11559732032986387107991004021392285783925812861821192530917403151452391805634 * i + 10857046999023057135944570762232829481370756359578518086990519993285655852781, 4082367875863433681332203403145435568316851327593401208105741076214120093531 * i + 8495653923123431417604973247489272438418190587263600148770280649306958101930) is a valid generator for G2")
-        .to_jacobian();
-
-    let p = pairing(&g1, &g2);
-
-    let g1_vec : Vec<G1> = vec![g1, g1];
-    let g2_vec : Vec<G2> = vec![g2, g2];
-    let p2 = pairing_batch(&g1_vec, &g2_vec);
-    assert!(!p2.is_zero());
-    assert!(!p.is_zero());
-}
-
-#[test]
-fn test_batch_bilinearity_empty() {
-    let p_vec : Vec<G1> = Vec::new();
-    let q_vec : Vec<G2> = Vec::new();
-    let r = pairing_batch(&p_vec, &q_vec);
-    assert_eq!(r, Fq12::one());
-}
-
-#[test]
-fn test_batch_bilinearity_one() {
-    use rand::{SeedableRng, StdRng};
-    let seed = [
-        0, 0, 0, 0, 0, 0, 64, 13, // 103245
-        0, 0, 0, 0, 0, 0, 176, 2, // 191922
-        0, 0, 0, 0, 0, 0, 0, 13, // 1293
-        0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
-    ];
-    let mut rng = StdRng::from_seed(seed);
-    let p_vec : Vec<G1> = vec![G1::random(&mut rng)];
-    let q_vec : Vec<G2> = vec![G2::random(&mut rng)];
-    let s = Fr::random(&mut rng);
-    let sp_vec : Vec<G1> = vec![p_vec[0] * s];
-    let sq_vec : Vec<G2> = vec![q_vec[0] * s];
-    let b = pairing_batch(&sp_vec, &q_vec);
-    let c = pairing_batch(&p_vec, &sq_vec);
-    assert_eq!(b, c);
-}
-
-#[test]
-fn test_batch_bilinearity_fifty() {
-    use rand::{SeedableRng, StdRng};
-    let seed = [
-        0, 0, 0, 0, 0, 0, 64, 13, // 103245
-        0, 0, 0, 0, 0, 0, 176, 2, // 191922
-        0, 0, 0, 0, 0, 0, 0, 13, // 1293
-        0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
-    ];
-    let mut rng = StdRng::from_seed(seed);
-
-    let mut p_vec : Vec<G1> = Vec::new();
-    let mut q_vec : Vec<G2> = Vec::new();
-    let mut sp_vec : Vec<G1> = Vec::new();
-    let mut sq_vec : Vec<G2> = Vec::new();
-    
-    for _ in 0..50 {
-        let p = G1::random(&mut rng);
-        let q = G2::random(&mut rng);
-        let s = Fr::random(&mut rng);
-        let sp = p * s;
-        let sq = q * s;
-        sp_vec.push(sp);
-        q_vec.push(q);
-        sq_vec.push(sq);
-        p_vec.push(p);
+        assert_eq!(expected, gt);
     }
-    let b_batch = pairing_batch(&sp_vec, &q_vec);
-    let c_batch = pairing_batch(&p_vec, &sq_vec);
-    assert_eq!(b_batch, c_batch);
-}
 
-#[test]
-fn test_bilinearity() {
-    use rand::{SeedableRng, StdRng};
-    let seed = [
-        0, 0, 0, 0, 0, 0, 64, 13, // 103245
-        0, 0, 0, 0, 0, 0, 176, 2, // 191922
-        0, 0, 0, 0, 0, 0, 0, 13, // 1293
-        0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
-    ];
-    let mut rng = StdRng::from_seed(seed);
+    #[test]
+    fn predefined_pair() {
+        let g1 = AffineG1::new(
+            Fq::from_str("1").expect("Fq(1) should exist"),
+            Fq::from_str("2").expect("Fq(2) should exist"),
+        ).expect("Point (1,2) should exist in G1")
+            .to_jacobian();
 
-    for _ in 0..50 {
-        let p = G1::random(&mut rng);
-        let q = G2::random(&mut rng);
+        let g2 = AffineG2::new(
+            Fq2::new(
+                Fq::from_str("10857046999023057135944570762232829481370756359578518086990519993285655852781")
+                    .expect("a-coeff of g2 x generator is of the right order"),
+                Fq::from_str("11559732032986387107991004021392285783925812861821192530917403151452391805634")
+                    .expect("b-coeff of g2 x generator is of the right order"),
+            ),
+            Fq2::new(
+                Fq::from_str("8495653923123431417604973247489272438418190587263600148770280649306958101930")
+                    .expect("a-coeff of g2 y generator is of the right order"),
+                Fq::from_str("4082367875863433681332203403145435568316851327593401208105741076214120093531")
+                    .expect("b-coeff of g2 y generator is of the right order"),
+            ),
+        ).expect("Point(11559732032986387107991004021392285783925812861821192530917403151452391805634 * i + 10857046999023057135944570762232829481370756359578518086990519993285655852781, 4082367875863433681332203403145435568316851327593401208105741076214120093531 * i + 8495653923123431417604973247489272438418190587263600148770280649306958101930) is a valid generator for G2")
+            .to_jacobian();
+
+        let p = pairing(&g1, &g2);
+
+        let g1_vec: Vec<G1> = vec![g1, g1];
+        let g2_vec: Vec<G2> = vec![g2, g2];
+        let p2 = pairing_batch(&g1_vec, &g2_vec);
+        assert!(!p2.is_zero());
+        assert!(!p.is_zero());
+    }
+
+    #[test]
+    fn test_batch_bilinearity_empty() {
+        let p_vec: Vec<G1> = Vec::new();
+        let q_vec: Vec<G2> = Vec::new();
+        let r = pairing_batch(&p_vec, &q_vec);
+        assert_eq!(r, Fq12::one());
+    }
+
+    #[test]
+    fn test_batch_bilinearity_one() {
+        use rand::{SeedableRng, StdRng};
+        let seed = [
+            0, 0, 0, 0, 0, 0, 64, 13, // 103245
+            0, 0, 0, 0, 0, 0, 176, 2, // 191922
+            0, 0, 0, 0, 0, 0, 0, 13, // 1293
+            0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
+        ];
+        let mut rng = StdRng::from_seed(seed);
+        let p_vec: Vec<G1> = vec![G1::random(&mut rng)];
+        let q_vec: Vec<G2> = vec![G2::random(&mut rng)];
         let s = Fr::random(&mut rng);
-        let sp = p * s;
-        let sq = q * s;
-
-        let a = pairing(&p, &q).pow(s);
-        let b = pairing(&sp, &q);
-        let c = pairing(&p, &sq);
-
-        assert_eq!(a, b);
+        let sp_vec: Vec<G1> = vec![p_vec[0] * s];
+        let sq_vec: Vec<G2> = vec![q_vec[0] * s];
+        let b = pairing_batch(&sp_vec, &q_vec);
+        let c = pairing_batch(&p_vec, &sq_vec);
         assert_eq!(b, c);
-
-        let t = -Fr::one();
-
-        assert!(a != Fq12::one());
-        assert_eq!((a.pow(t)) * a, Fq12::one());
     }
-}
 
-#[test]
-fn internals() {
-    let test_p = G1::one();
+    #[test]
+    fn test_batch_bilinearity_fifty() {
+        use rand::{SeedableRng, StdRng};
+        let seed = [
+            0, 0, 0, 0, 0, 0, 64, 13, // 103245
+            0, 0, 0, 0, 0, 0, 176, 2, // 191922
+            0, 0, 0, 0, 0, 0, 0, 13, // 1293
+            0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
+        ];
+        let mut rng = StdRng::from_seed(seed);
 
-    let val = G1::new(test_p.x().clone(), test_p.y().clone(), test_p.z().clone());
+        let mut p_vec: Vec<G1> = Vec::new();
+        let mut q_vec: Vec<G2> = Vec::new();
+        let mut sp_vec: Vec<G1> = Vec::new();
+        let mut sq_vec: Vec<G2> = Vec::new();
 
-    let affine = val.to_affine()
-        .expect("There should be affine coords for (0, 0)");
+        for _ in 0..50 {
+            let p = G1::random(&mut rng);
+            let q = G2::random(&mut rng);
+            let s = Fr::random(&mut rng);
+            let sp = p * s;
+            let sq = q * s;
+            sp_vec.push(sp);
+            q_vec.push(q);
+            sq_vec.push(sq);
+            p_vec.push(p);
+        }
+        let b_batch = pairing_batch(&sp_vec, &q_vec);
+        let c_batch = pairing_batch(&p_vec, &sq_vec);
+        assert_eq!(b_batch, c_batch);
+    }
 
-    assert_eq!(affine.x(), &Fq::one());
-}
+    #[test]
+    fn test_bilinearity() {
+        use rand::{SeedableRng, StdRng};
+        let seed = [
+            0, 0, 0, 0, 0, 0, 64, 13, // 103245
+            0, 0, 0, 0, 0, 0, 176, 2, // 191922
+            0, 0, 0, 0, 0, 0, 0, 13, // 1293
+            0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
+        ];
+        let mut rng = StdRng::from_seed(seed);
 
-#[test]
-fn affine_fail() {
-    let res = AffineG1::new(Fq::one(), Fq::one());
-    assert!(
-        res.is_err(),
-        "Affine initialization should fail because the point is not on curve"
-    );
-}
+        for _ in 0..50 {
+            let p = G1::random(&mut rng);
+            let q = G2::random(&mut rng);
+            let s = Fr::random(&mut rng);
+            let sp = p * s;
+            let sq = q * s;
 
-#[test]
-fn affine_ok() {
-    let res = AffineG1::new(Fq::one(), G1Params::coeff_b());
-    assert!(
-        res.is_err(),
-        "Affine initialization should be ok because the point is on the curve"
-    );
-}
+            let a = pairing(&p, &q).pow(s);
+            let b = pairing(&sp, &q);
+            let c = pairing(&p, &sq);
 
-#[test]
-fn test_y_at_point_at_infinity() {
-    assert!(G1::zero().y == Fq::one());
-    assert!((-G1::zero()).y == Fq::one());
+            assert_eq!(a, b);
+            assert_eq!(b, c);
 
-    assert!(G2::zero().y == Fq2::one());
-    assert!((-G2::zero()).y == Fq2::one());
+            let t = -Fr::one();
+
+            assert!(a != Fq12::one());
+            assert_eq!((a.pow(t)) * a, Fq12::one());
+        }
+    }
+
+    #[test]
+    fn internals() {
+        let test_p = G1::one();
+
+        let val = G1::new(test_p.x().clone(), test_p.y().clone(), test_p.z().clone());
+
+        let affine = val.to_affine()
+            .expect("There should be affine coords for (0, 0)");
+
+        assert_eq!(affine.x(), &Fq::one());
+    }
+
+    #[test]
+    fn affine_fail() {
+        let res = AffineG1::new(Fq::one(), Fq::one());
+        assert!(
+            res.is_err(),
+            "Affine initialization should fail because the point is not on curve"
+        );
+    }
+
+    #[test]
+    fn affine_ok() {
+        let res = AffineG1::new(Fq::one(), G1Params::coeff_b());
+        assert!(
+            res.is_err(),
+            "Affine initialization should be ok because the point is on the curve"
+        );
+    }
+
+    #[test]
+    fn test_y_at_point_at_infinity() {
+        assert!(G1::zero().y == Fq::one());
+        assert!((-G1::zero()).y == Fq::one());
+
+        assert!(G2::zero().y == Fq2::one());
+        assert!((-G2::zero()).y == Fq2::one());
+    }
 }
