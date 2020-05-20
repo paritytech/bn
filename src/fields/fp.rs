@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use core::ops::{Add, Mul, Neg, Sub};
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 use fields::FieldElement;
 use arith::{U256, U512};
 
@@ -34,7 +34,7 @@ macro_rules! field_impl {
         #[cfg(feature = "rustc-serialize")]
         impl Decodable for $name {
             fn decode<S: Decoder>(s: &mut S) -> Result<$name, S::Error> {
-                $name::new(try!(U256::decode(s))).ok_or_else(|| s.error("integer is not less than modulus"))
+                $name::new(U256::decode(s)?).ok_or_else(|| s.error("integer is not less than modulus"))
             }
         }
 
@@ -115,7 +115,7 @@ macro_rules! field_impl {
                 $name(U256::from($one))
             }
 
-            fn random<R: Rng>(rng: &mut R) -> Self {
+            fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
                 $name(U256::random(rng, &U256::from($modulus)))
             }
 
@@ -285,7 +285,7 @@ pub fn const_fq(i: [u64; 4]) -> Fq {
 
 #[test]
 fn test_rsquared() {
-    let rng = &mut ::rand::thread_rng();
+    let rng = &mut rand::thread_rng();
 
     for _ in 0..1000 {
         let a = Fr::random(rng);

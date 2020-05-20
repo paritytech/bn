@@ -1,5 +1,5 @@
 use core::ops::{Add, Mul, Neg, Sub};
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 use fields::{const_fq, FieldElement, Fq};
 use arith::{U256, U512};
 
@@ -56,7 +56,7 @@ impl Encodable for Fq2 {
 #[cfg(feature = "rustc-serialize")]
 impl Decodable for Fq2 {
     fn decode<S: Decoder>(s: &mut S) -> Result<Fq2, S::Error> {
-        let combined = try!(U512::decode(s));
+        let combined = U512::decode(s)?;
 
         match combined.divrem(&Fq::modulus()) {
             (Some(c1), c0) => Ok(Fq2::new(Fq::new(c0).unwrap(), Fq::new(c1).unwrap())),
@@ -116,7 +116,7 @@ impl FieldElement for Fq2 {
         }
     }
 
-    fn random<R: Rng>(rng: &mut R) -> Self {
+    fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
         Fq2 {
             c0: Fq::random(rng),
             c1: Fq::random(rng),
