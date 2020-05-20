@@ -56,7 +56,7 @@ impl Encodable for Fq2 {
 #[cfg(feature = "rustc-serialize")]
 impl Decodable for Fq2 {
     fn decode<S: Decoder>(s: &mut S) -> Result<Fq2, S::Error> {
-        let combined = try!(U512::decode(s));
+        let combined = U512::decode(s)?;
 
         match combined.divrem(&Fq::modulus()) {
             (Some(c1), c0) => Ok(Fq2::new(Fq::new(c0).unwrap(), Fq::new(c1).unwrap())),

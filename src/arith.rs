@@ -158,7 +158,7 @@ impl Encodable for U512 {
         }
 
         for i in 0..(4 * 16) {
-            try!(s.emit_u8(buf[i]));
+            s.emit_u8(buf[i])?;
         }
 
         Ok(())
@@ -171,7 +171,7 @@ impl Decodable for U512 {
         let mut buf = [0; (4 * 16)];
 
         for i in 0..(4 * 16) {
-            buf[i] = try!(s.read_u8());
+            buf[i] = s.read_u8()?;
         }
 
         Ok(U512::interpret(&buf))
@@ -188,7 +188,7 @@ impl Encodable for U256 {
         }
 
         for i in 0..(2 * 16) {
-            try!(s.emit_u8(buf[i]));
+            s.emit_u8(buf[i])?;
         }
 
         Ok(())
@@ -201,7 +201,7 @@ impl Decodable for U256 {
         let mut buf = [0; (2 * 16)];
 
         for i in 0..(2 * 16) {
-            buf[i] = try!(s.read_u8());
+            buf[i] = s.read_u8()?;
         }
 
         U256::from_slice(&buf).map_err(|_| s.error("Invalid input length; Also unreachable;"))

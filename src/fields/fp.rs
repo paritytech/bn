@@ -34,7 +34,7 @@ macro_rules! field_impl {
         #[cfg(feature = "rustc-serialize")]
         impl Decodable for $name {
             fn decode<S: Decoder>(s: &mut S) -> Result<$name, S::Error> {
-                $name::new(try!(U256::decode(s))).ok_or_else(|| s.error("integer is not less than modulus"))
+                $name::new(U256::decode(s)?).ok_or_else(|| s.error("integer is not less than modulus"))
             }
         }
 
