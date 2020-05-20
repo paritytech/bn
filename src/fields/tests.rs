@@ -1,4 +1,7 @@
-use rand::{Rng, SeedableRng, StdRng};
+extern crate rand_chacha;
+use rand_core::{CryptoRng, RngCore, SeedableRng};
+use self::rand_chacha::ChaChaRng;
+
 use super::FieldElement;
 
 fn can_invert<F: FieldElement>() {
@@ -20,7 +23,7 @@ fn can_invert<F: FieldElement>() {
     assert_eq!(F::zero().inverse(), None);
 }
 
-fn rand_element_eval<F: FieldElement, R: Rng>(rng: &mut R) {
+fn rand_element_eval<F: FieldElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..100 {
         let a = F::random(rng);
         let b = F::random(rng);
@@ -31,7 +34,7 @@ fn rand_element_eval<F: FieldElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn rand_element_squaring<F: FieldElement, R: Rng>(rng: &mut R) {
+fn rand_element_squaring<F: FieldElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..100 {
         let a = F::random(rng);
 
@@ -46,7 +49,7 @@ fn rand_element_squaring<F: FieldElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn rand_element_addition_and_negation<F: FieldElement, R: Rng>(rng: &mut R) {
+fn rand_element_addition_and_negation<F: FieldElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..100 {
         let a = F::random(rng);
 
@@ -85,7 +88,7 @@ fn rand_element_addition_and_negation<F: FieldElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn rand_element_inverse<F: FieldElement, R: Rng>(rng: &mut R) {
+fn rand_element_inverse<F: FieldElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..10000 {
         let a = F::random(rng);
         assert!(a.inverse().unwrap() * a == F::one());
@@ -94,7 +97,7 @@ fn rand_element_inverse<F: FieldElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn rand_element_multiplication<F: FieldElement, R: Rng>(rng: &mut R) {
+fn rand_element_multiplication<F: FieldElement, R: CryptoRng + RngCore>(rng: &mut R) {
     // If field is not associative under multiplication, 1/8 of all triplets a, b, c
     // will fail the test (a*b)*c = a*(b*c).
 
@@ -120,11 +123,11 @@ pub fn field_trials<F: FieldElement>() {
         0, 0, 0, 0, 0, 0, 0, 13, // 1293
         0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
     ];
-    let mut rng = StdRng::from_seed(seed);
+    let mut rng = ChaChaRng::from_seed(seed);
 
-    rand_element_squaring::<F, StdRng>(&mut rng);
-    rand_element_addition_and_negation::<F, StdRng>(&mut rng);
-    rand_element_multiplication::<F, StdRng>(&mut rng);
-    rand_element_inverse::<F, StdRng>(&mut rng);
-    rand_element_eval::<F, StdRng>(&mut rng);
+    rand_element_squaring::<F, ChaChaRng>(&mut rng);
+    rand_element_addition_and_negation::<F, ChaChaRng>(&mut rng);
+    rand_element_multiplication::<F, ChaChaRng>(&mut rng);
+    rand_element_inverse::<F, ChaChaRng>(&mut rng);
+    rand_element_eval::<F, ChaChaRng>(&mut rng);
 }

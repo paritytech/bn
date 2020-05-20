@@ -1,7 +1,7 @@
 use fields::{const_fq, FieldElement, Fq, Fq12, Fq2, Fr, fq2_nonresidue};
 use arith::U256;
 use core::{fmt, ops::{Add, Mul, Neg, Sub}};
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 use alloc::vec::Vec;
 
 #[cfg(feature = "rustc-serialize")]
@@ -27,7 +27,7 @@ pub trait GroupElement
     + Mul<Fr, Output = Self> {
     fn zero() -> Self;
     fn one() -> Self;
-    fn random<R: Rng>(rng: &mut R) -> Self;
+    fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self;
     fn is_zero(&self) -> bool;
     fn double(&self) -> Self;
 }
@@ -294,7 +294,7 @@ impl<P: GroupParams> GroupElement for G<P> {
         P::one()
     }
 
-    fn random<R: Rng>(rng: &mut R) -> Self {
+    fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
         P::one() * Fr::random(rng)
     }
 
@@ -532,7 +532,6 @@ pub type AffineG2 = AffineG<G2Params>;
 
 #[cfg(test)]
 mod tests;
-
 #[test]
 fn test_g1() {
     tests::group_trials::<G1>();
@@ -545,7 +544,8 @@ fn test_g2() {
 
 #[test]
 fn test_affine_jacobian_conversion() {
-    let rng = &mut ::rand::thread_rng();
+    extern crate rand;
+    let rng = &mut rand::thread_rng();
 
     assert!(G1::zero().to_affine().is_none());
     assert!(G2::zero().to_affine().is_none());
@@ -983,6 +983,9 @@ pub fn pairing_batch(ps: &[G1], qs: &[G2]) -> Fq12 {
 #[cfg(test)]
 mod test {
     use super::*;
+    extern crate rand_chacha;
+    use rand_core::SeedableRng;
+    use self::rand_chacha::ChaChaRng;
 
     #[test]
     fn test_reduced_pairing() {
@@ -990,12 +993,12 @@ mod test {
 
         let g1 = G1::one()
             * Fr::from_str(
-            "18097487326282793650237947474982649264364522469319914492172746413872781676",
-        ).unwrap();
+                "18097487326282793650237947474982649264364522469319914492172746413872781676",
+            ).unwrap();
         let g2 = G2::one()
             * Fr::from_str(
-            "20390255904278144451778773028944684152769293537511418234311120800877067946",
-        ).unwrap();
+                "20390255904278144451778773028944684152769293537511418234311120800877067946",
+            ).unwrap();
 
         let gt = pairing(&g1, &g2);
 
@@ -1083,8 +1086,8 @@ mod test {
 
         let p = pairing(&g1, &g2);
 
-        let g1_vec: Vec<G1> = vec![g1, g1];
-        let g2_vec: Vec<G2> = vec![g2, g2];
+        let g1_vec : Vec<G1> = vec![g1, g1];
+        let g2_vec : Vec<G2> = vec![g2, g2];
         let p2 = pairing_batch(&g1_vec, &g2_vec);
         assert!(!p2.is_zero());
         assert!(!p.is_zero());
@@ -1092,27 +1095,26 @@ mod test {
 
     #[test]
     fn test_batch_bilinearity_empty() {
-        let p_vec: Vec<G1> = Vec::new();
-        let q_vec: Vec<G2> = Vec::new();
+        let p_vec : Vec<G1> = Vec::new();
+        let q_vec : Vec<G2> = Vec::new();
         let r = pairing_batch(&p_vec, &q_vec);
         assert_eq!(r, Fq12::one());
     }
 
     #[test]
     fn test_batch_bilinearity_one() {
-        use rand::{SeedableRng, StdRng};
         let seed = [
             0, 0, 0, 0, 0, 0, 64, 13, // 103245
             0, 0, 0, 0, 0, 0, 176, 2, // 191922
             0, 0, 0, 0, 0, 0, 0, 13, // 1293
             0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
         ];
-        let mut rng = StdRng::from_seed(seed);
-        let p_vec: Vec<G1> = vec![G1::random(&mut rng)];
-        let q_vec: Vec<G2> = vec![G2::random(&mut rng)];
+        let mut rng = ChaChaRng::from_seed(seed);
+        let p_vec : Vec<G1> = vec![G1::random(&mut rng)];
+        let q_vec : Vec<G2> = vec![G2::random(&mut rng)];
         let s = Fr::random(&mut rng);
-        let sp_vec: Vec<G1> = vec![p_vec[0] * s];
-        let sq_vec: Vec<G2> = vec![q_vec[0] * s];
+        let sp_vec : Vec<G1> = vec![p_vec[0] * s];
+        let sq_vec : Vec<G2> = vec![q_vec[0] * s];
         let b = pairing_batch(&sp_vec, &q_vec);
         let c = pairing_batch(&p_vec, &sq_vec);
         assert_eq!(b, c);
@@ -1120,19 +1122,18 @@ mod test {
 
     #[test]
     fn test_batch_bilinearity_fifty() {
-        use rand::{SeedableRng, StdRng};
         let seed = [
             0, 0, 0, 0, 0, 0, 64, 13, // 103245
             0, 0, 0, 0, 0, 0, 176, 2, // 191922
             0, 0, 0, 0, 0, 0, 0, 13, // 1293
             0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
         ];
-        let mut rng = StdRng::from_seed(seed);
+        let mut rng = ChaChaRng::from_seed(seed);
 
-        let mut p_vec: Vec<G1> = Vec::new();
-        let mut q_vec: Vec<G2> = Vec::new();
-        let mut sp_vec: Vec<G1> = Vec::new();
-        let mut sq_vec: Vec<G2> = Vec::new();
+        let mut p_vec : Vec<G1> = Vec::new();
+        let mut q_vec : Vec<G2> = Vec::new();
+        let mut sp_vec : Vec<G1> = Vec::new();
+        let mut sq_vec : Vec<G2> = Vec::new();
 
         for _ in 0..50 {
             let p = G1::random(&mut rng);
@@ -1152,14 +1153,13 @@ mod test {
 
     #[test]
     fn test_bilinearity() {
-        use rand::{SeedableRng, StdRng};
         let seed = [
             0, 0, 0, 0, 0, 0, 64, 13, // 103245
             0, 0, 0, 0, 0, 0, 176, 2, // 191922
             0, 0, 0, 0, 0, 0, 0, 13, // 1293
             0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
         ];
-        let mut rng = StdRng::from_seed(seed);
+        let mut rng = ChaChaRng::from_seed(seed);
 
         for _ in 0..50 {
             let p = G1::random(&mut rng);

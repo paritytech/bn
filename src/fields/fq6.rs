@@ -1,6 +1,6 @@
 use fields::{const_fq, FieldElement, Fq, Fq2};
 use core::ops::{Add, Mul, Neg, Sub};
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 
 fn frobenius_coeffs_c1(n: usize) -> Fq2 {
     match n % 6 {
@@ -148,7 +148,7 @@ impl FieldElement for Fq6 {
         }
     }
 
-    fn random<R: Rng>(rng: &mut R) -> Self {
+    fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
         Fq6 {
             c0: Fq2::random(rng),
             c1: Fq2::random(rng),

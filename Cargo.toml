@@ -16,7 +16,7 @@ default = ["rustc-serialize"]
 name = "api"
 
 [dependencies]
-rand = { version = "0.5", features = ["i128_support"], default-features = false }
+rand_core = {version = "0.5", default-features = false, features = ["alloc"]}
 rustc-serialize = { version = "0.3", optional = true }
 byteorder = { version = "1.0", features = ["i128"], default-features = false }
 crunchy = "0.2.1"
@@ -24,7 +24,8 @@ lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 rustc-hex = { version = "2", default-features = false }
 
 [dev-dependencies]
-rand = { version = "0.5", features = ["i128_support"] }
+rand = "0.7"
+rand_chacha = "0.2"
 
 [dev-dependencies.bincode]
 version = "0.6"

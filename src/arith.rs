@@ -1,5 +1,5 @@
 use core::cmp::Ordering;
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -83,7 +83,7 @@ impl U512 {
      pub fn from_slice(s: &[u8]) -> Result<U512, Error> {
         if s.len() != 64 {
             return Err(Error::InvalidLength {
-                expected: 32,
+                expected: 64,
                 actual: s.len(),
             });
         }
@@ -97,8 +97,12 @@ impl U512 {
     }
 
     /// Get a random U512
-    pub fn random<R: Rng>(rng: &mut R) -> U512 {
-        U512(rng.gen())
+    pub fn random<R: CryptoRng + RngCore>(rng: &mut R) -> U512 {
+        let mut u512_bytes = [0u8; 64];
+        rng.fill_bytes(&mut u512_bytes);
+
+        U512::from_slice(&u512_bytes)
+            .expect("I believe 64 != 64 should always be false")
     }
 
     pub fn get_bit(&self, n: usize) -> Option<bool> {
@@ -302,7 +306,7 @@ impl U256 {
     }
 
     /// Produce a random number (mod `modulo`)
-    pub fn random<R: Rng>(rng: &mut R, modulo: &U256) -> U256 {
+    pub fn random<R: CryptoRng + RngCore>(rng: &mut R, modulo: &U256) -> U256 {
         U512::random(rng).divrem(modulo).1
     }
 
@@ -607,7 +611,7 @@ fn mul_reduce(this: &mut [u128; 2], by: &[u128; 2], modulus: &[u128; 2], inv: u1
 
 #[test]
 fn setting_bits() {
-    let rng = &mut ::rand::thread_rng();
+    let rng = &mut rand::thread_rng();
     let modulo = U256::from([0xffffffffffffffff; 4]);
 
     let a = U256::random(rng, &modulo);
@@ -648,7 +652,7 @@ fn to_big_endian() {
 
 #[test]
 fn testing_divrem() {
-    let rng = &mut ::rand::thread_rng();
+    let rng = &mut rand::thread_rng();
 
     let modulo = U256::from([
         0x3c208c16d87cfd47,

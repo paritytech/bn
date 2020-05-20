@@ -1,5 +1,5 @@
 use core::ops::{Add, Mul, Neg, Sub};
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 use fields::{const_fq, FieldElement, Fq, Fq2, Fq6};
 use arith::U256;
 
@@ -281,7 +281,7 @@ impl FieldElement for Fq12 {
         }
     }
 
-    fn random<R: Rng>(rng: &mut R) -> Self {
+    fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
         Fq12 {
             c0: Fq6::random(rng),
             c1: Fq6::random(rng),

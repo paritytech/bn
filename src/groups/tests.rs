@@ -1,8 +1,12 @@
+extern crate rand_chacha;
+
 use super::GroupElement;
 use fields::{FieldElement, Fr};
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore, SeedableRng};
 
-fn random_test_addition<G: GroupElement, R: Rng>(rng: &mut R) {
+use self::rand_chacha::ChaChaRng;
+
+fn random_test_addition<G: GroupElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..50 {
         let r1 = G::random(rng);
         let r2 = G::random(rng);
@@ -13,7 +17,7 @@ fn random_test_addition<G: GroupElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn random_test_doubling<G: GroupElement, R: Rng>(rng: &mut R) {
+fn random_test_doubling<G: GroupElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..50 {
         let r1 = G::random(rng);
         let r2 = G::random(rng);
@@ -24,7 +28,7 @@ fn random_test_doubling<G: GroupElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn random_test_dh<G: GroupElement, R: Rng>(rng: &mut R) {
+fn random_test_dh<G: GroupElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..50 {
         let alice_sk = Fr::random(rng);
         let bob_sk = Fr::random(rng);
@@ -39,7 +43,7 @@ fn random_test_dh<G: GroupElement, R: Rng>(rng: &mut R) {
     }
 }
 
-fn random_test_equality<G: GroupElement, R: Rng>(rng: &mut R) {
+fn random_test_equality<G: GroupElement, R: CryptoRng + RngCore>(rng: &mut R) {
     for _ in 0..50 {
         let begin = G::random(rng);
 
@@ -90,14 +94,13 @@ pub fn group_trials<G: GroupElement>() {
 
     assert!((G::one() * (-Fr::one()) + G::one()).is_zero());
 
-    use rand::{SeedableRng, StdRng};
     let seed = [
         0, 0, 0, 0, 0, 0, 64, 13, // 103245
         0, 0, 0, 0, 0, 0, 176, 2, // 191922
         0, 0, 0, 0, 0, 0, 0, 13, // 1293
         0, 0, 0, 0, 0, 0, 96, 7u8, // 192103
     ];
-    let mut rng = StdRng::from_seed(seed);
+    let mut rng = ChaChaRng::from_seed(seed);
 
     random_test_addition::<G, _>(&mut rng);
     random_test_doubling::<G, _>(&mut rng);
