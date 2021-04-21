@@ -1,4 +1,4 @@
-use rand::{Rng, SeedableRng, StdRng};
+use rand::{Rng, SeedableRng, rngs::StdRng};
 use super::FieldElement;
 
 fn can_invert<F: FieldElement>() {

@@ -90,7 +90,7 @@ pub fn group_trials<G: GroupElement>() {
 
     assert!((G::one() * (-Fr::one()) + G::one()).is_zero());
 
-    use rand::{SeedableRng, StdRng};
+    use rand::{SeedableRng, rngs::StdRng};
     let seed = [
         0, 0, 0, 0, 0, 0, 64, 13, // 103245
         0, 0, 0, 0, 0, 0, 176, 2, // 191922
