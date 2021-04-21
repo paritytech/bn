@@ -1,14 +1,6 @@
 #![no_std]
 
-#[cfg_attr(test, macro_use)]
 extern crate alloc;
-extern crate byteorder;
-#[macro_use]
-extern crate crunchy;
-extern crate rand;
-#[cfg(feature = "rustc-serialize")]
-extern crate rustc_serialize;
-#[macro_use] extern crate lazy_static;
 
 pub mod arith;
 mod fields;
@@ -22,7 +14,6 @@ use core::ops::{Add, Mul, Neg, Sub};
 use rand::Rng;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[repr(C)]
 pub struct Fr(fields::Fr);
 
@@ -132,7 +123,6 @@ impl From<FieldError> for CurveError {
 pub use crate::groups::Error as GroupError;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[repr(C)]
 pub struct Fq(fields::Fq);
 
@@ -330,7 +320,6 @@ pub trait Group
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[repr(C)]
 pub struct G1(groups::G1);
 
@@ -442,7 +431,6 @@ impl Mul<Fr> for G1 {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[repr(C)]
 pub struct AffineG1(groups::AffineG1);
 
@@ -479,7 +467,6 @@ impl From<AffineG1> for G1 {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[repr(C)]
 pub struct G2(groups::G2);
 
@@ -646,7 +633,6 @@ pub fn miller_loop_batch(pairs: &[(G2, G1)]) -> Result<Gt, CurveError> {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[repr(C)]
 pub struct AffineG2(groups::AffineG2);
 
@@ -684,12 +670,11 @@ impl From<AffineG2> for G2 {
 
 #[cfg(test)]
 mod tests {
-    extern crate rustc_hex as hex;
     use alloc::vec::Vec;
     use super::{G1, Fq, G2, Fq2};
 
     fn hex(s: &'static str) -> Vec<u8> {
-        use self::hex::FromHex;
+        use rustc_hex::FromHex;
         s.from_hex().unwrap()
     }
 

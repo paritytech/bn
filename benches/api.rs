@@ -2,7 +2,6 @@
 
 use substrate_bn::*;
 use bincode::SizeLimit::Infinite;
-use bincode::rustc_serialize::{decode, encode};
 
 const SAMPLES: usize = 30;
 
@@ -24,42 +23,6 @@ macro_rules! benchmark(
             });
         }
     )
-);
-
-benchmark!(g1_serialization,
-           input(rng) = G1::random(rng);
-
-           encode(input, Infinite).unwrap()
-);
-
-benchmark!(g1_serialization_normalized,
-           input(rng) = {let mut tmp = G1::random(rng); tmp.normalize(); tmp};
-
-           encode(input, Infinite).unwrap()
-);
-
-benchmark!(g2_serialization,
-           input(rng) = G2::random(rng);
-
-           encode(input, Infinite).unwrap()
-);
-
-benchmark!(g2_serialization_normalized,
-           input(rng) = {let mut tmp = G2::random(rng); tmp.normalize(); tmp};
-
-           encode(input, Infinite).unwrap()
-);
-
-benchmark!(g1_deserialization,
-           input(rng) = {encode(&G1::random(rng), Infinite).unwrap()};
-
-           decode::<G1>(input).unwrap()
-);
-
-benchmark!(g2_deserialization,
-           input(rng) = {encode(&G2::random(rng), Infinite).unwrap()};
-
-           decode::<G2>(input).unwrap()
 );
 
 benchmark!(fr_addition,

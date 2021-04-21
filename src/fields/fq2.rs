@@ -3,9 +3,6 @@ use rand::Rng;
 use crate::fields::{const_fq, FieldElement, Fq};
 use crate::arith::{U256, U512};
 
-#[cfg(feature = "rustc-serialize")]
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-
 #[inline]
 fn fq_non_residue() -> Fq {
     // (q - 1) is a quadratic nonresidue in Fq
@@ -41,28 +38,6 @@ pub fn fq2_nonresidue() -> Fq2 {
 pub struct Fq2 {
     c0: Fq,
     c1: Fq,
-}
-
-#[cfg(feature = "rustc-serialize")]
-impl Encodable for Fq2 {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        let c0: U256 = self.c0.into();
-        let c1: U256 = self.c1.into();
-
-        U512::new(&c1, &c0, &Fq::modulus()).encode(s)
-    }
-}
-
-#[cfg(feature = "rustc-serialize")]
-impl Decodable for Fq2 {
-    fn decode<S: Decoder>(s: &mut S) -> Result<Fq2, S::Error> {
-        let combined = U512::decode(s)?;
-
-        match combined.divrem(&Fq::modulus()) {
-            (Some(c1), c0) => Ok(Fq2::new(Fq::new(c0).unwrap(), Fq::new(c1).unwrap())),
-            _ => Err(s.error("integer not less than modulus squared")),
-        }
-    }
 }
 
 impl Fq2 {
@@ -206,7 +181,7 @@ impl Neg for Fq2 {
     }
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref FQ: U256 = U256::from([
         0x3c208c16d87cfd47,
         0x97816a916871ca8d,

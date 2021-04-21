@@ -3,9 +3,8 @@ use crate::arith::U256;
 use core::{fmt, ops::{Add, Mul, Neg, Sub}};
 use rand::Rng;
 use alloc::vec::Vec;
-
-#[cfg(feature = "rustc-serialize")]
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+#[cfg(test)]
+use alloc::vec;
 
 // This is the NAF version of ate_loop_count. Entries are all mod 4, so 3 = -1
 // n.b. ate_loop_count = 0x19d797039be763ba8
@@ -33,9 +32,6 @@ pub trait GroupElement
 }
 
 pub trait GroupParams: Sized + fmt::Debug {
-    #[cfg(feature = "rustc-serialize")]
-    type Base: FieldElement + Decodable + Encodable;
-    #[cfg(not(feature = "rustc-serialize"))]
     type Base: FieldElement;
 
     fn name() -> &'static str;
@@ -227,57 +223,6 @@ impl<P: GroupParams> AffineG<P> {
             y: self.y,
             z: P::Base::one(),
         }
-    }
-}
-
-#[cfg(feature = "rustc-serialize")]
-impl<P: GroupParams> Encodable for G<P> {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        if self.is_zero() {
-            let l: u8 = 0;
-            l.encode(s)
-        } else {
-            let l: u8 = 4;
-            l.encode(s)?;
-            self.to_affine().unwrap().encode(s)
-        }
-    }
-}
-
-#[cfg(feature = "rustc-serialize")]
-impl<P: GroupParams> Encodable for AffineG<P> {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        self.x.encode(s)?;
-        self.y.encode(s)?;
-
-        Ok(())
-    }
-}
-
-#[cfg(feature = "rustc-serialize")]
-impl<P: GroupParams> Decodable for G<P> {
-    fn decode<S: Decoder>(s: &mut S) -> Result<G<P>, S::Error> {
-        let l = u8::decode(s)?;
-        if l == 0 {
-            Ok(G::zero())
-        } else if l == 4 {
-            Ok(AffineG::decode(s)?.to_jacobian())
-        } else {
-            Err(s.error("invalid leading byte for uncompressed group element"))
-        }
-    }
-}
-
-#[cfg(feature = "rustc-serialize")]
-impl<P: GroupParams> Decodable for AffineG<P> {
-    fn decode<S: Decoder>(s: &mut S) -> Result<AffineG<P>, S::Error> {
-        let x = P::Base::decode(s)?;
-        let y = P::Base::decode(s)?;
-
-        Self::new(x, y).map_err(|e| match e {
-            Error::NotOnCurve => s.error("point is not on the curve"),
-            Error::NotInSubgroup => s.error("point is not in the subgroup"),
-        })
     }
 }
 

@@ -11,14 +11,13 @@ license = "MIT OR Apache-2.0"
 edition = "2018"
 
 [features]
-default = ["rustc-serialize"]
+default = []
 
 [[bench]]
 name = "api"
 
 [dependencies]
 rand = { version = "0.8.3", default-features = false }
-rustc-serialize = { version = "0.3", optional = true }
 byteorder = { version = "1.0", features = ["i128"], default-features = false }
 crunchy = "0.2.1"
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
@@ -30,4 +29,3 @@ rand = { version = "0.8.3", features = ["std_rng"] }
 [dev-dependencies.bincode]
 version = "0.6"
 default-features = false
-features = ["rustc-serialize"]
