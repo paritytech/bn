@@ -1,10 +1,6 @@
 #![feature(test)]
-extern crate bincode;
-extern crate bn;
-extern crate rand;
-extern crate test;
 
-use bn::*;
+use substrate_bn::*;
 use bincode::SizeLimit::Infinite;
 use bincode::rustc_serialize::{decode, encode};
 
