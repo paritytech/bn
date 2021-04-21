@@ -1,7 +1,6 @@
 #![feature(test)]
 
 use substrate_bn::*;
-use bincode::SizeLimit::Infinite;
 
 const SAMPLES: usize = 30;
 

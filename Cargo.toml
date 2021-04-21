@@ -26,6 +26,3 @@ rustc-hex = { version = "2", default-features = false }
 [dev-dependencies]
 rand = { version = "0.8.3", features = ["std_rng"] }
 
-[dev-dependencies.bincode]
-version = "0.6"
-default-features = false
